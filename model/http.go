@@ -23,3 +23,8 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	}
 	return nil
 }
+
+type FinRequest struct {
+	UserID string `json:"user_id"`
+	Amount int64  `json:"amount"`
+}

@@ -1,8 +1,10 @@
 package user
 
 import (
+	"Fin-BEReview/constants"
 	model "Fin-BEReview/model"
 	"Fin-BEReview/service"
+	"encoding/json"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -10,12 +12,8 @@ import (
 
 func AddFundHandler(s *service.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		type AddFundRequest struct {
-			UserID string `json:"user_id" validate:"required"`
-			Amount int    `json:"amount" validate:"required"`
-		}
 
-		req := new(AddFundRequest)
+		req := new(model.FinRequest)
 		c.Bind(req)
 		if err := c.Validate(req); err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, model.StandardResponse{
@@ -43,11 +41,34 @@ func AddFundHandler(s *service.Service) echo.HandlerFunc {
 			})
 		}
 
-		err = s.UserService.AddFund(user, int64(req.Amount))
+		// err = s.UserService.AddFund(user, int64(req.Amount))
+		// if err != nil {
+		// 	return echo.NewHTTPError(http.StatusInternalServerError, model.StandardResponse{
+		// 		Success:  false,
+		// 		Response: "Add fund failed",
+		// 		Error:    []string{err.Error()},
+		// 	})
+		// }
+		request, err := json.Marshal(model.FinRequest{
+			UserID: user.UserID.String(),
+			Amount: req.Amount,
+		})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, model.StandardResponse{
 				Success:  false,
-				Response: "Add fund failed",
+				Response: "Marshal request fail",
+				Error:    []string{err.Error()},
+			})
+		}
+		job := &model.Job{
+			Key:   constants.FinAddFundJobKey,
+			Value: string(request),
+		}
+		err = s.JobService.AddJob(job)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, model.StandardResponse{
+				Success:  false,
+				Response: "add job failed",
 				Error:    []string{err.Error()},
 			})
 		}
@@ -63,12 +84,8 @@ func AddFundHandler(s *service.Service) echo.HandlerFunc {
 
 func WithdrawHandler(s *service.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		type AddFundRequest struct {
-			UserID string `json:"user_id" validate:"required"`
-			Amount int    `json:"amount" validate:"required"`
-		}
 
-		req := new(AddFundRequest)
+		req := new(model.FinRequest)
 		c.Bind(req)
 		if err := c.Validate(req); err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, model.StandardResponse{
@@ -103,11 +120,26 @@ func WithdrawHandler(s *service.Service) echo.HandlerFunc {
 				Error:    []string{"budget < request amount"},
 			})
 		}
-		err = s.UserService.Withdraw(user, int64(req.Amount))
+		request, err := json.Marshal(model.FinRequest{
+			UserID: user.UserID.String(),
+			Amount: req.Amount,
+		})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, model.StandardResponse{
 				Success:  false,
-				Response: "Add fund failed",
+				Response: "Marshal request fail",
+				Error:    []string{err.Error()},
+			})
+		}
+		job := &model.Job{
+			Key:   constants.FinWithdrawJobKey,
+			Value: string(request),
+		}
+		err = s.JobService.AddJob(job)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, model.StandardResponse{
+				Success:  false,
+				Response: "add job failed",
 				Error:    []string{err.Error()},
 			})
 		}

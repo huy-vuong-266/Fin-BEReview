@@ -2,6 +2,7 @@ package main
 
 import (
 	"Fin-BEReview/internal"
+	"Fin-BEReview/internal/job"
 	"Fin-BEReview/internal/user"
 	"Fin-BEReview/model"
 	"Fin-BEReview/service"
@@ -19,6 +20,7 @@ func main() {
 
 	service := &service.Service{
 		UserService: user.NewServiceUser(),
+		JobService:  job.NewServiceJob(),
 	}
 	e.Validator = &model.CustomValidator{
 		Validator: validator.New(),
@@ -37,6 +39,11 @@ func main() {
 	}
 
 	fmt.Println("Server listen and server at port 8011")
+	go func() {
+		for {
+			service.JobService.ProcessJob(*service)
+		}
+	}()
 	err = server.ListenAndServe()
 	if err != nil {
 		panic(err)
